@@ -128,3 +128,51 @@ void Network::print_traj(const int time, const std::map<std::string, size_t> &_n
             }
     (*_out) << std::endl;
 }
+
+// ******************************************************* //
+
+std::vector<std::pair<size_t, double> > Network::neighbors(const size_t& n) const{
+	std::vector<std::pair<size_t, double> > tab;
+	for (std::map<std::pair<size_t, size_t>, double>::const_iterator i = links.lower_bound({n, 0})
+			; i != links.end() and (i->first.first) ==n ; ++i){
+		tab.push_back({i->first.second, i->second});
+		}
+		return tab;
+	}
+
+std::pair<size_t, double> Network::degree(const size_t& n) const{
+	std::vector<std::pair<size_t, double> > tab(neighbors(n));
+	double sum(0);
+	for (auto& val : tab){
+		sum += val.second;
+		}
+	return std::pair<size_t, double> {tab.size(), sum}; 
+	}
+
+std::set<size_t> Network::step(const std::vector<double>& vec){	// J
+	std::set<size_t> tab;
+		
+	for (size_t i(0) ; i < neurons.size() ; ++i){
+		double w(1);
+		if (neurons[i].is_inhibitory()) w = (0.4);
+		
+		std::vector<std::pair<size_t, double>> voisins(neighbors(i));
+		double sumI(0), sumE(0);
+		for (size_t j(0) ; j < voisins.size() ; ++j){
+			if (neurons[voisins[j].first].firing()){
+				if (neurons[voisins[j].first].is_inhibitory()) sumI += voisins[j].second;
+				else sumE += voisins[j].second;
+				}
+			}
+
+		double INPUT = w*vec[i] + 0.5*sumE + sumI;
+		neurons[i].input(INPUT);
+		} //calcul des inputs terminé
+	
+	for (size_t i(0) ; i < neurons.size() ; ++i){
+		if (not neurons[i].firing()) neurons[i].step(); //calcule les nouvelles données des non-firing
+		else tab.insert(i), neurons[i].reset(); //reset les anciens firing dont on a tiré les input
+		}
+		
+	return tab;	
+	}
