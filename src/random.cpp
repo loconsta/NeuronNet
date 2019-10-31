@@ -6,7 +6,8 @@ RandomNumbers::RandomNumbers(unsigned long int s){
 		std::random_device rd;
 		seed = rd();
 		}
-		rng = std::mt19937(seed);
+	else seed = s;
+	rng = std::mt19937(seed);
 	}
 
 void RandomNumbers::uniform_double(std::vector<double>& vec, double lower, double upper){
